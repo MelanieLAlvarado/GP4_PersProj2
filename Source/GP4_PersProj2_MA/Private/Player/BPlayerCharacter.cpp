@@ -60,6 +60,7 @@ void ABPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
 		EnhancedInputComponent->BindAction(MoveInputAction, ETriggerEvent::Triggered, this, &ABPlayerCharacter::HandleMoveInput);
 
 		EnhancedInputComponent->BindAction(QuitInputAction, ETriggerEvent::Triggered, this, &ABPlayerCharacter::HandleQuitInput);
+		EnhancedInputComponent->BindAction(TransformInputAction, ETriggerEvent::Triggered, this, &ABPlayerCharacter::HandleQuitInput);
 	}
 }
 
