@@ -22,26 +22,29 @@ ABVehiclePawn::ABVehiclePawn()
 	VehicleMovementComp->MaxNormalizedTireLoad = 2.0f;
 	VehicleMovementComp->MaxNormalizedTireLoadFiltered = 2.0f;*/
 
-	//torque setup
-	VehicleMovementComp->EngineSetup.MaxRPM = 5700.f;
-	VehicleMovementComp->EngineSetup.TorqueCurve.GetRichCurve()->Reset();
-	VehicleMovementComp->EngineSetup.TorqueCurve.GetRichCurve()->AddKey(0.0f, 4000.f);
-	VehicleMovementComp->EngineSetup.TorqueCurve.GetRichCurve()->AddKey(1890.0f, 500.f);
-	VehicleMovementComp->EngineSetup.TorqueCurve.GetRichCurve()->AddKey(5730.0f, 400.f);
+	if (VehicleMovementComp)
+	{
+		//torque setup
+		VehicleMovementComp->EngineSetup.MaxRPM = 5700.f;
+		VehicleMovementComp->EngineSetup.TorqueCurve.GetRichCurve()->Reset();
+		VehicleMovementComp->EngineSetup.TorqueCurve.GetRichCurve()->AddKey(0.0f, 4000.f);
+		VehicleMovementComp->EngineSetup.TorqueCurve.GetRichCurve()->AddKey(1890.0f, 500.f);
+		VehicleMovementComp->EngineSetup.TorqueCurve.GetRichCurve()->AddKey(5730.0f, 400.f);
 
-	//adjust steering
-	VehicleMovementComp->EngineSetup.TorqueCurve.GetRichCurve()->Reset();
-	VehicleMovementComp->EngineSetup.TorqueCurve.GetRichCurve()->AddKey(0.0f, 1.f);
-	VehicleMovementComp->EngineSetup.TorqueCurve.GetRichCurve()->AddKey(40.0f, .7f);
-	VehicleMovementComp->EngineSetup.TorqueCurve.GetRichCurve()->AddKey(120.0f, 0.6f);
+		//adjust steering
+		VehicleMovementComp->EngineSetup.TorqueCurve.GetRichCurve()->Reset();
+		VehicleMovementComp->EngineSetup.TorqueCurve.GetRichCurve()->AddKey(0.0f, 1.f);
+		VehicleMovementComp->EngineSetup.TorqueCurve.GetRichCurve()->AddKey(40.0f, .7f);
+		VehicleMovementComp->EngineSetup.TorqueCurve.GetRichCurve()->AddKey(120.0f, 0.6f);
 
-	VehicleMovementComp->DifferentialSetup.DifferentialType = EVehicleDifferential::AllWheelDrive;
-	VehicleMovementComp->DifferentialSetup.FrontRearSplit = 0.65f;
+		VehicleMovementComp->DifferentialSetup.DifferentialType = EVehicleDifferential::AllWheelDrive;
+		VehicleMovementComp->DifferentialSetup.FrontRearSplit = 0.65f;
 
-	//automatic gearbox
-	VehicleMovementComp->TransmissionSetup.bUseAutomaticGears = true;
-	VehicleMovementComp->TransmissionSetup.GearChangeTime = 0.15f;
-	//VehicleMovementComp->TransmissionSetup.GearAutoBoxLatency = 1.0f;
+		//automatic gearbox
+		VehicleMovementComp->TransmissionSetup.bUseAutomaticGears = true;
+		VehicleMovementComp->TransmissionSetup.GearChangeTime = 0.15f;
+		//VehicleMovementComp->TransmissionSetup.GearAutoBoxLatency = 1.0f;
+	}
 
 	//Camera boom
 	VehicleCamBoom = CreateDefaultSubobject<USpringArmComponent>("Vehicle Camera Boom");
@@ -61,6 +64,19 @@ void ABVehiclePawn::Tick(float DeltaTime)
 	UpdateInAirControl(DeltaTime);
 }
 
+void ABVehiclePawn::PawnClientRestart()
+{
+	Super::PawnClientRestart();
+	APlayerController* OwningPlayerController = GetController<APlayerController>();
+	if (OwningPlayerController)
+	{
+		UEnhancedInputLocalPlayerSubsystem* EnhancedSubsystem =
+			OwningPlayerController->GetLocalPlayer()->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>();
+		EnhancedSubsystem->RemoveMappingContext(GameplayInputMappingContext);
+		EnhancedSubsystem->AddMappingContext(GameplayInputMappingContext, 0);
+	}
+}
+
 void ABVehiclePawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
@@ -68,42 +84,39 @@ void ABVehiclePawn::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 	UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent);
 	if (EnhancedInputComponent)
 	{
-		//EnhancedInputComponent->BindAction(ThrottleInputAction, ETriggerEvent::Triggered, this, &ABVehiclePawn::ApplyThrottle);
+		EnhancedInputComponent->BindAction(MoveInputAction, ETriggerEvent::Triggered, this, &ABVehiclePawn::HandleMoveInput);
 
+		EnhancedInputComponent->BindAction(LookInputAction, ETriggerEvent::Triggered, this, &ABVehiclePawn::HandleLookInput);
 		/*EnhancedInputComponent->BindAction(JumpInputAction, ETriggerEvent::Triggered, this, &ABPlayerCharacter::Jump);
-		EnhancedInputComponent->BindAction(LookInputAction, ETriggerEvent::Triggered, this, &ABPlayerCharacter::HandleLookInput);
-		EnhancedInputComponent->BindAction(MoveInputAction, ETriggerEvent::Triggered, this, &ABPlayerCharacter::HandleMoveInput);
 
 		EnhancedInputComponent->BindAction(QuitInputAction, ETriggerEvent::Triggered, this, &ABPlayerCharacter::HandleQuitInput);
 		EnhancedInputComponent->BindAction(TransformInputAction, ETriggerEvent::Triggered, this, &ABPlayerCharacter::HandleQuitInput);*/
 	}
 }
 
-void ABVehiclePawn::ApplyThrottle(float Val)
+void ABVehiclePawn::HandleMoveInput(const FInputActionValue& InputActionValue)
 {
-	//FVector2D InputValue = InputActionValue.Get<float>();
-	GetVehicleMovementComponent()->SetThrottleInput(Val);
-}
+	FVector2D InputValue = InputActionValue.Get<FVector2D>();
+	InputValue.Normalize();
 
-void ABVehiclePawn::ApplySteering(float Val)
-{
-	GetVehicleMovementComponent()->SetSteeringInput(Val);
-}
-
-void ABVehiclePawn::LookUp(float Val)
-{
-	if (Val != 0.0f)
+	GetVehicleMovementComponent()->SetSteeringInput(InputValue.X);
+	
+	//is braking the car
+	if (InputValue.Y < 0.0f)
 	{
-		AddControllerPitchInput(Val);
+		OnHandBrakePressed();
+		return;
 	}
+	
+	OnHandBrakeReleased();
+	GetVehicleMovementComponent()->SetThrottleInput(InputValue.Y);
 }
 
-void ABVehiclePawn::Turn(float Val)
+void ABVehiclePawn::HandleLookInput(const FInputActionValue& InputActionValue)
 {
-	if (Val != 0.0f)
-	{
-		AddControllerYawInput(Val);
-	}
+	FVector2D InputValue = InputActionValue.Get<FVector2D>();
+	AddControllerYawInput(InputValue.X);
+	AddControllerPitchInput(-InputValue.Y);
 }
 
 void ABVehiclePawn::OnHandBrakePressed()
@@ -119,4 +132,14 @@ void ABVehiclePawn::OnHandBrakeReleased()
 void ABVehiclePawn::UpdateInAirControl(float DeltaTime)
 {
 	//Add Later...
+}
+
+FVector ABVehiclePawn::GetLookRightDirection() const
+{
+	return VehicleCam->GetRightVector();
+}
+
+FVector ABVehiclePawn::GetLookForwardDirection() const
+{
+	return VehicleCam->GetForwardVector();
 }

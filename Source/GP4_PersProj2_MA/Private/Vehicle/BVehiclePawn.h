@@ -19,15 +19,15 @@ public:
 
 	virtual void Tick(float DeltaTime) override;
 
+	virtual void PawnClientRestart() override;
+
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 	//Throttle/Steering
-	void ApplyThrottle(float Val);
-	void ApplySteering(float Val);
+	void HandleMoveInput(const struct FInputActionValue& InputActionValue);
 
 	//Controls
-	void LookUp(float Val);
-	void Turn(float Val);
+	void HandleLookInput(const struct FInputActionValue& InputActionValue);
 
 	//HandBrake
 	void OnHandBrakePressed();
@@ -36,18 +36,20 @@ public:
 	//Air Physics
 	void UpdateInAirControl(float DeltaTime);
 
+
+	FVector GetLookRightDirection() const;
+
+	FVector GetLookForwardDirection() const;
+
 private:
 	UPROPERTY(EditDefaultsOnly, Category = "Vehicle Camera")
 	class USpringArmComponent* VehicleCamBoom;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Vehicle Camera")
 	class UCameraComponent* VehicleCam;
-
+	
 	UPROPERTY(EditDefaultsOnly, Category = "Input")
-	class UInputAction* ThrottleInputAction;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Input")
-	class UInputAction* SteerInputAction;
+	class UInputAction* MoveInputAction;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Input")
 	class UInputAction* LookInputAction;

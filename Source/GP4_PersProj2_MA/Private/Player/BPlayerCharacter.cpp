@@ -93,11 +93,6 @@ USpringArmComponent* ABPlayerCharacter::GetCameraBoom()
 
 void ABPlayerCharacter::HandleLookInput(const FInputActionValue& InputActionValue)
 {
-	if (GetVelocity().Length() <= 0)
-	{
-		GetCharacterMovement()->bOrientRotationToMovement = true;
-		bUseControllerRotationYaw = false;
-	}
 	FVector2D InputValue = InputActionValue.Get<FVector2D>();
 	AddControllerYawInput(InputValue.X);
 	AddControllerPitchInput(-InputValue.Y);
