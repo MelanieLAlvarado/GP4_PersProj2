@@ -85,12 +85,19 @@ private:
 	void HandleLookInput(const struct FInputActionValue& InputActionValue);
 	void HandleMoveInput(const struct FInputActionValue& InputActionValue);
 
-	void HandleQuitInput(const struct FInputActionValue& InputActionValue);
-
-
 	FVector GetLookRightDirection() const;
 
 	FVector GetLookForwardDirection() const;
 
 	FVector GetMoveForwardDirection() const;
+
+	virtual void HandleQuitInput(const struct FInputActionValue& InputActionValue);
+
+	virtual void HandleTransformInput(const struct FInputActionValue& InputActionValue);
+
+	UPROPERTY(EditDefaultsOnly, Category = "Transformer Options")
+	TSubclassOf<AActor> TransformAlternateMode;
+
+protected:
+	bool bIsTransformed = false;
 };

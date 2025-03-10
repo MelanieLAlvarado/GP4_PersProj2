@@ -10,6 +10,7 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
+#include "Vehicle/BVehiclePawn.h"
 
 #define ECC_Target ECC_GameTraceChannel1
 
@@ -60,7 +61,7 @@ void ABPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
 		EnhancedInputComponent->BindAction(MoveInputAction, ETriggerEvent::Triggered, this, &ABPlayerCharacter::HandleMoveInput);
 
 		EnhancedInputComponent->BindAction(QuitInputAction, ETriggerEvent::Triggered, this, &ABPlayerCharacter::HandleQuitInput);
-		EnhancedInputComponent->BindAction(TransformInputAction, ETriggerEvent::Triggered, this, &ABPlayerCharacter::HandleQuitInput);
+		EnhancedInputComponent->BindAction(TransformInputAction, ETriggerEvent::Triggered, this, &ABPlayerCharacter::HandleTransformInput);
 	}
 }
 
@@ -116,6 +117,22 @@ void ABPlayerCharacter::HandleQuitInput(const FInputActionValue& InputActionValu
 	{
 		PlayerController->ConsoleCommand("quit");
 	}
+}
+
+void ABPlayerCharacter::HandleTransformInput(const FInputActionValue& InputActionValue)
+{
+	AActor* TransformAlternateModeActor = GetWorld()->SpawnActor<AActor>(TransformAlternateMode, GetTransform());
+	if (!TransformAlternateModeActor)
+		return;
+
+	ABVehiclePawn* CarAlternateMode = Cast<ABVehiclePawn>(TransformAlternateModeActor);
+	if (CarAlternateMode)
+	{
+		//add pawn ver
+		GetController()->Possess(CarAlternateMode);
+		Destroy();
+	}
+
 }
 
 FVector ABPlayerCharacter::GetLookRightDirection() const
